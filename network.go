@@ -7,19 +7,19 @@ import (
 )
 
 func main() {
-	var n network.Netzwerk = network.New("My Network", false)
+	var n network.Network = network.New("My Network", false)
 
-	n.AddKnot("knot1", []*network.Kante{}, []*network.Kante{})
+	n.AddKnot("knot1", []*network.Connection{}, []*network.Connection{})
 	n.Print("")
-	fmt.Println(n.AddKnot("knot1", []*network.Kante{}, []*network.Kante{}))
+	fmt.Println(n.AddKnot("knot1", []*network.Connection{}, []*network.Connection{}))
 	n.Print("")
-	n.AddKnot("knot2", []*network.Kante{n.NewConnection(n.GetKnotByContent("knot1"), 4)}, []*network.Kante{n.NewConnection(n.GetKnotByContent("knot1"), 2)})
+	n.AddKnot("knot2", []*network.Connection{n.ConnectionConstructor(n.GetKnotByContent("knot1"), 4)}, []*network.Connection{n.ConnectionConstructor(n.GetKnotByContent("knot1"), 2)})
 	n.Print("")
-	n.AddKnot("knot3", []*network.Kante{n.NewConnection(n.GetKnotByContent("knot1"), 4), n.NewConnection(n.GetKnotByContent("knot2"), 3)}, []*network.Kante{})
+	n.AddKnot("knot3", []*network.Connection{n.ConnectionConstructor(n.GetKnotByContent("knot1"), 4), n.ConnectionConstructor(n.GetKnotByContent("knot2"), 3)}, []*network.Connection{})
 
 	n.Print("")
 
-	n.SetAktKnoten(n.GetKnotByContent("knot3"))
+	n.SetCurrentKnot(n.GetKnotByContent("knot3"))
 
 	n.Print("")
 

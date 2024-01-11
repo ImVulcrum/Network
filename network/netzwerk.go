@@ -1,24 +1,18 @@
 package network
 
-type Netzwerk interface {
-	// AddStartKnoten(inhalt string)
-	// Search(inhalt string) *Knoten
-	// AddKnoten(inhalt string, qk *Knoten, gewicht int)
-	// AddFurtherStartknoten(inhalt string, zk *Knoten, gewicht int)
-	// AddKante(qk, zk *Knoten, gewicht int)
-	// GehzuStart()
+type Network interface {
 	String() string
-	GibAktKnoten() *Knoten
-	GibAnzahlKnoten() int
-	MoveToFirst()
+	GiveCurrentKnot() *Knot
+	GiveKnotCount() int
 	//important functions
-	AddKnot(inhalt string, outgoing_con []*Kante, incoming_con []*Kante) error
-	ChangeName(new_name string)
-	GiveName() string
-	GetKnotByContent(content string) *Knoten
-	NewConnection(t *Knoten, w int) *Kante
+	AddKnot(inhalt string, outgoing_con []*Connection, incoming_con []*Connection) error
+	ChangeNetworkName(new_name string)
+	GiveNetworkName() string
+	GetKnotByContent(content string) *Knot
+	ConnectionConstructor(t *Knot, w int) *Connection
 	DeleteKnotByContent(content string)
 	MoveByWeight(type_of_movement int) error
-	SetAktKnoten(knot *Knoten)
+	MoveByContent(content string) error
+	SetCurrentKnot(knot *Knot)
 	Print(tag string)
 }

@@ -7,21 +7,20 @@ import (
 )
 
 type data struct {
-	start                 []*Knoten
-	knots                 []*Knoten
-	aktKnoten             *Knoten
+	knots                 []*Knot
+	current_knot          *Knot
 	name                  string
 	allow_identical_names bool
 }
 
-type Knoten struct {
-	kanten     []*Kante
-	inhalt     string
-	start_knot bool
+type Knot struct {
+	Connectionn []*Connection
+	inhalt      string
+	start_knot  bool
 }
 
-type Kante struct {
-	ziel    *Knoten
+type Connection struct {
+	ziel    *Knot
 	gewicht int
 }
 
@@ -32,75 +31,29 @@ func New(name string, allow_identical_names bool) *data {
 	return n
 }
 
-func (n *data) ChangeName(new_name string) {
+func (n *data) ChangeNetworkName(new_name string) {
 	n.name = new_name
 }
 
-func (n *data) GiveName() string {
+func (n *data) GiveNetworkName() string {
 	return n.name
 }
 
-func (n *data) GibAktKnoten() *Knoten {
-	return n.aktKnoten
+func (n *data) GiveCurrentKnot() *Knot {
+	return n.current_knot
 }
 
-func (n *data) GibAnzahlKnoten() int {
+func (n *data) GiveKnotCount() int {
 	return len(n.knots)
 }
 
-func (n *data) GetKnotByContent(content string) *Knoten {
+func (n *data) GetKnotByContent(content string) *Knot {
 	for i := 0; i < len(n.knots); i++ {
 		if n.knots[i].inhalt == content {
 			return n.knots[i]
 		}
 	}
 	return nil
-}
-
-// func (k *Knoten) HatInhalt(inhalt string, anzahl, zaehler int) *Knoten {
-// 	var nk *Knoten
-// 	if anzahl == zaehler {
-// 		return nk
-// 	}
-// 	if k.inhalt == inhalt {
-// 		nk = k
-// 	} else {
-// 		for i := 0; i < len(k.kanten); i++ {
-// 			k.kanten[i].ziel.HatInhalt(inhalt, anzahl, zaehler+1)
-// 		}
-// 	}
-// 	return nk
-// }
-
-// func (n *data) Search(inhalt string) *Knoten {
-// 	var k *Knoten
-// 	var list []*Knoten
-// 	for i := 0; i < len(n.start); i++ {
-// 		list = append(list, n.start[i].HatInhalt(inhalt, len(n.knots), 0))
-// 	}
-// 	for i := 0; i < len(list); i++ {
-// 		if list[i] != nil {
-// 			k = list[i]
-// 		}
-// 	}
-// 	return k
-// }
-
-// func (n *data) GehzuStart() {
-// 	if len(n.start) != 0 {
-// 		n.aktKnoten = n.start[0]
-// 	}
-// }
-
-func (kn *Knoten) String() string {
-	var erg string
-	erg = erg + fmt.Sprintln(kn.inhalt)
-	for i := 0; i < len(kn.kanten); i++ {
-		erg = erg + "   --"
-		erg = erg + fmt.Sprint(kn.kanten[i].gewicht, "-->")
-		erg = erg + fmt.Sprintln(kn.kanten[i].ziel.inhalt)
-	}
-	return erg
 }
 
 func (n *data) String() string {
@@ -113,8 +66,8 @@ func (n *data) String() string {
 		}
 		erg = erg + fmt.Sprint(n.knots[i])
 	}
-	erg = erg + "aktKnoten:" + fmt.Sprintln(n.aktKnoten)
-	erg = erg + fmt.Sprintln("Anzahl der Knoten:", len(n.knots))
+	erg = erg + "current_knot:" + fmt.Sprintln(n.current_knot)
+	erg = erg + fmt.Sprintln("Anzahl der Knot:", len(n.knots))
 	return erg
 }
 
@@ -127,13 +80,13 @@ func (n *data) Print(tag string) {
 			erg = erg + "StartKnot: "
 		}
 		erg = erg + fmt.Sprint(n.knots[i])
-		if n.knots[i] == n.aktKnoten {
+		if n.knots[i] == n.current_knot {
 			color.Cyan(erg)
 		} else {
 			fmt.Print(erg)
 		}
 	}
-	fmt.Print(fmt.Sprintln("\nAnzahl der Knoten:", len(n.knots)))
+	fmt.Print(fmt.Sprintln("\nAnzahl der Knot:", len(n.knots)))
 	if tag != "" {
 		fmt.Println("Tag:", tag)
 	}
@@ -141,73 +94,69 @@ func (n *data) Print(tag string) {
 	fmt.Println("")
 }
 
+func (n *data) MoveByContent(content string) error {
+	if len(n.current_knot.Connectionn) == 0 {
+		return fmt.Errorf("the current knot has no connections")
+	}
+
+	var i int
+	for i = 0; i < len(n.current_knot.Connectionn); i++ {
+		if n.current_knot.Connectionn[i].ziel.inhalt == content {
+			n.current_knot = n.current_knot.Connectionn[i].ziel
+			return nil
+		}
+	}
+
+	if i == len(n.current_knot.Connectionn) {
+		return fmt.Errorf("the current knot has no connection to the given knot")
+	}
+	return nil
+}
+
 func (n *data) MoveByWeight(type_of_movement int) error {
 	//-1 smallest
 	//-2 highest
 
-	if len(n.aktKnoten.kanten) == 0 {
+	if len(n.current_knot.Connectionn) == 0 {
 		return fmt.Errorf("the current knot has no connections")
 	}
 	var index int = 0
 
 	if type_of_movement >= 0 {
 		var i int
-		for i = 0; i < len(n.aktKnoten.kanten); i++ {
-			if n.aktKnoten.kanten[i].gewicht == type_of_movement {
-				n.aktKnoten = n.aktKnoten.kanten[i].ziel
+		for i = 0; i < len(n.current_knot.Connectionn); i++ {
+			if n.current_knot.Connectionn[i].gewicht == type_of_movement {
+				n.current_knot = n.current_knot.Connectionn[i].ziel
 				return nil
 			}
 		}
-		if i == len(n.aktKnoten.kanten) {
+		if i == len(n.current_knot.Connectionn) {
 			return fmt.Errorf("the current knot has no connection with he given weight")
 		}
 	} else if type_of_movement == -1 {
-		var current_smallest int = n.aktKnoten.kanten[0].gewicht
+		var current_smallest int = n.current_knot.Connectionn[0].gewicht
 
-		for i := 0; i < len(n.aktKnoten.kanten); i++ {
-			if n.aktKnoten.kanten[i].gewicht < current_smallest {
-				current_smallest = n.aktKnoten.kanten[i].gewicht
+		for i := 0; i < len(n.current_knot.Connectionn); i++ {
+			if n.current_knot.Connectionn[i].gewicht < current_smallest {
+				current_smallest = n.current_knot.Connectionn[i].gewicht
 				index = i
 			}
 		}
 	} else if type_of_movement == -2 {
-		var current_highest int = n.aktKnoten.kanten[0].gewicht
-		for i := 0; i < len(n.aktKnoten.kanten); i++ {
-			if n.aktKnoten.kanten[i].gewicht > current_highest {
-				current_highest = n.aktKnoten.kanten[i].gewicht
+		var current_highest int = n.current_knot.Connectionn[0].gewicht
+		for i := 0; i < len(n.current_knot.Connectionn); i++ {
+			if n.current_knot.Connectionn[i].gewicht > current_highest {
+				current_highest = n.current_knot.Connectionn[i].gewicht
 				index = i
 			}
 		}
 	}
-	n.aktKnoten = n.aktKnoten.kanten[index].ziel
+	n.current_knot = n.current_knot.Connectionn[index].ziel
 	return nil
 }
 
-func (n *data) SetAktKnoten(knot *Knoten) {
-	n.aktKnoten = knot
-}
-
-func (n *data) MoveToFirst() {
-	if len(n.aktKnoten.kanten) != 0 {
-		n.aktKnoten = n.aktKnoten.kanten[0].ziel
-	}
-}
-
-func (kn *Knoten) MinNachbar() *Knoten {
-	var nk *Knoten
-	if len(kn.kanten) != 0 {
-		var min int
-		var index int
-		min = kn.kanten[0].gewicht
-		for i := 1; i < len(kn.kanten); i++ {
-			if min > kn.kanten[i].gewicht {
-				min = kn.kanten[i].gewicht
-				index = i
-			}
-		}
-		nk = kn.kanten[index].ziel
-	}
-	return nk
+func (n *data) SetCurrentKnot(knot *Knot) {
+	n.current_knot = knot
 }
 
 func (n *data) DeleteKnotByContent(content string) {
@@ -233,32 +182,15 @@ func (n *data) DeleteKnotByContent(content string) {
 	}
 }
 
-func (knot *Knoten) DeleteConnectionByDestination(delition_destination *Knoten) {
-	var i int
-
-	for i = 0; i < len(knot.kanten); i++ {
-		if knot.kanten[i].ziel == delition_destination {
-			break
-		}
-	}
-
-	//delete function
-	if i < len(knot.kanten) {
-		knot.kanten[i] = knot.kanten[len(knot.kanten)-1]
-		knot.kanten[len(knot.kanten)-1] = nil
-		knot.kanten = knot.kanten[:len(knot.kanten)-1]
-	}
-}
-
-func (n *data) NewConnection(t *Knoten, w int) *Kante {
-	var con *Kante = new(Kante)
+func (n *data) ConnectionConstructor(t *Knot, w int) *Connection {
+	var con *Connection = new(Connection)
 	con.ziel = t
 	con.gewicht = w
 	return con
 }
 
-func (n *data) AddKnot(inhalt string, outgoing_con []*Kante, incoming_con []*Kante) error {
-	var knot *Knoten = new(Knoten)
+func (n *data) AddKnot(inhalt string, outgoing_con []*Connection, incoming_con []*Connection) error {
+	var knot *Knot = new(Knot)
 
 	if !n.allow_identical_names {
 		for i := 0; i < len(n.knots); i++ {
@@ -272,62 +204,54 @@ func (n *data) AddKnot(inhalt string, outgoing_con []*Kante, incoming_con []*Kan
 
 	if len(incoming_con) == 0 && (len(outgoing_con) != 0 || len(n.knots) == 0) { //if the knot has no incoming knots but outcoming knots or also no outcoming knots if it is the first knot
 		knot.start_knot = true
-		n.start = append(n.start, knot)
 	} else {
 		knot.start_knot = false
 	}
 
 	for i := 0; i < len(outgoing_con); i++ {
-		knot.kanten = append(knot.kanten, outgoing_con[i])
+		knot.Connectionn = append(knot.Connectionn, outgoing_con[i])
 		if outgoing_con[i].ziel.start_knot { //if one connection goes to a start knot this flag must be removed, cuz is is't a start knot anymore
 			outgoing_con[i].ziel.start_knot = false
 		}
 	}
 
 	for i := 0; i < len(incoming_con); i++ {
-		var connection *Kante = new(Kante)
+		var connection *Connection = new(Connection)
 		connection.gewicht = incoming_con[i].gewicht
 		connection.ziel = knot
-		incoming_con[i].ziel.kanten = append(incoming_con[i].ziel.kanten, connection)
+		incoming_con[i].ziel.Connectionn = append(incoming_con[i].ziel.Connectionn, connection)
 	}
 	n.knots = append(n.knots, knot)
 
 	return nil
 }
 
-// func (n *data) AddKnoten(inhalt string, qk *Knoten, gewicht int) {
-// 	var k *Knoten = new(Knoten)
-// 	k.inhalt = inhalt
-// 	var nk *Kante = new(Kante)
-// 	nk.ziel = k
-// 	nk.gewicht = gewicht
-// 	qk.kanten = append(qk.kanten, nk)
-// 	// n.anzahl++
-// }
+//knot functions
 
-// func (n *data) AddStartKnoten(inhalt string) {
-// 	var k *Knoten = new(Knoten)
-// 	k.inhalt = inhalt
-// 	if len(n.knots) == 0 {
-// 		n.start = append(n.start, k)
-// 		// n.anzahl++
-// 	}
-// }
+func (knot *Knot) String() string {
+	var erg string
+	erg = erg + fmt.Sprintln(knot.inhalt)
+	for i := 0; i < len(knot.Connectionn); i++ {
+		erg = erg + "   --"
+		erg = erg + fmt.Sprint(knot.Connectionn[i].gewicht, "-->")
+		erg = erg + fmt.Sprintln(knot.Connectionn[i].ziel.inhalt)
+	}
+	return erg
+}
 
-// func (n *data) AddFurtherStartknoten(inhalt string, zk *Knoten, gewicht int) {
-// 	var k *Knoten = new(Knoten)
-// 	k.inhalt = inhalt
-// 	n.start = append(n.start, k)
-// 	var nk *Kante = new(Kante)
-// 	nk.ziel = zk
-// 	nk.gewicht = gewicht
-// 	k.kanten = append(k.kanten, nk)
-// 	// n.anzahl++
-// }
+func (knot *Knot) DeleteConnectionByDestination(delition_destination *Knot) {
+	var i int
 
-// func (n *data) AddKante(qk, zk *Knoten, gewicht int) {
-// 	var nk *Kante = new(Kante)
-// 	nk.ziel = zk
-// 	nk.gewicht = gewicht
-// 	qk.kanten = append(qk.kanten, nk)
-// }
+	for i = 0; i < len(knot.Connectionn); i++ {
+		if knot.Connectionn[i].ziel == delition_destination {
+			break
+		}
+	}
+
+	//delete function
+	if i < len(knot.Connectionn) {
+		knot.Connectionn[i] = knot.Connectionn[len(knot.Connectionn)-1]
+		knot.Connectionn[len(knot.Connectionn)-1] = nil
+		knot.Connectionn = knot.Connectionn[:len(knot.Connectionn)-1]
+	}
+}
