@@ -18,4 +18,7 @@ type Netzwerk interface {
 	GetKnotByContent(content string) *Knoten
 	NewConnection(t *Knoten, w int) *Kante
 	DeleteKnotByContent(content string)
+	MoveByWeight(type_of_movement int) error
+	SetAktKnoten(knot *Knoten)
+	Print(tag string)
 }

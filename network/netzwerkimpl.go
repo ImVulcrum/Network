@@ -1,6 +1,10 @@
 package network
 
-import "fmt"
+import (
+	"fmt"
+
+	"../color"
+)
 
 type data struct {
 	start                 []*Knoten
@@ -112,6 +116,75 @@ func (n *data) String() string {
 	erg = erg + "aktKnoten:" + fmt.Sprintln(n.aktKnoten)
 	erg = erg + fmt.Sprintln("Anzahl der Knoten:", len(n.knots))
 	return erg
+}
+
+func (n *data) Print(tag string) {
+	fmt.Println("")
+	color.Red("-----" + n.name + "-----")
+	for i := 0; i < len(n.knots); i++ {
+		var erg = fmt.Sprint(i+1) + ". "
+		if n.knots[i].start_knot {
+			erg = erg + "StartKnot: "
+		}
+		erg = erg + fmt.Sprint(n.knots[i])
+		if n.knots[i] == n.aktKnoten {
+			color.Cyan(erg)
+		} else {
+			fmt.Print(erg)
+		}
+	}
+	fmt.Print(fmt.Sprintln("\nAnzahl der Knoten:", len(n.knots)))
+	if tag != "" {
+		fmt.Println("Tag:", tag)
+	}
+	color.Red("-----" + n.name + "-----")
+	fmt.Println("")
+}
+
+func (n *data) MoveByWeight(type_of_movement int) error {
+	//-1 smallest
+	//-2 highest
+
+	if len(n.aktKnoten.kanten) == 0 {
+		return fmt.Errorf("the current knot has no connections")
+	}
+	var index int = 0
+
+	if type_of_movement >= 0 {
+		var i int
+		for i = 0; i < len(n.aktKnoten.kanten); i++ {
+			if n.aktKnoten.kanten[i].gewicht == type_of_movement {
+				n.aktKnoten = n.aktKnoten.kanten[i].ziel
+				return nil
+			}
+		}
+		if i == len(n.aktKnoten.kanten) {
+			return fmt.Errorf("the current knot has no connection with he given weight")
+		}
+	} else if type_of_movement == -1 {
+		var current_smallest int = n.aktKnoten.kanten[0].gewicht
+
+		for i := 0; i < len(n.aktKnoten.kanten); i++ {
+			if n.aktKnoten.kanten[i].gewicht < current_smallest {
+				current_smallest = n.aktKnoten.kanten[i].gewicht
+				index = i
+			}
+		}
+	} else if type_of_movement == -2 {
+		var current_highest int = n.aktKnoten.kanten[0].gewicht
+		for i := 0; i < len(n.aktKnoten.kanten); i++ {
+			if n.aktKnoten.kanten[i].gewicht > current_highest {
+				current_highest = n.aktKnoten.kanten[i].gewicht
+				index = i
+			}
+		}
+	}
+	n.aktKnoten = n.aktKnoten.kanten[index].ziel
+	return nil
+}
+
+func (n *data) SetAktKnoten(knot *Knoten) {
+	n.aktKnoten = knot
 }
 
 func (n *data) MoveToFirst() {
