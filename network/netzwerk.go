@@ -15,4 +15,6 @@ type Network interface {
 	MoveByContent(content string) error
 	SetCurrentKnot(knot *Knot)
 	Print(tag string)
+
+	Dijkstras(startknot *Knot) PriorityQueue
 }

@@ -1,6 +1,7 @@
 package network
 
 import (
+	"container/heap"
 	"fmt"
 
 	"../color"
@@ -23,6 +24,96 @@ type Connection struct {
 	ziel    *Knot
 	gewicht int
 }
+
+type Item struct {
+	cKnot         *Knot
+	distance      int
+	previous_knot *Knot
+	visited       bool
+}
+
+// Priority Queue Implemenetation
+type PriorityQueue []Item
+
+// unnötig
+func (pq PriorityQueue) Len() int { return len(pq) }
+func (pq PriorityQueue) Swap(i, j int) {
+	pq[i], pq[j] = pq[j], pq[i]
+}
+func (pq *PriorityQueue) Push(x interface{}) {
+	item := x.(Item)
+	*pq = append(*pq, item)
+}
+func (pq *PriorityQueue) Pop() interface{} {
+	old := *pq
+	n := len(old)
+	item := old[n-1]
+	*pq = old[0 : n-1]
+	return item
+}
+
+//ende unnötig
+
+// Less compares two elements in the priority queue based on their distances.
+func (pq PriorityQueue) Less(i, j int) bool {
+	if pq[i].distance == -3 {
+		return false
+	} else if pq[j].distance == -3 {
+		return true
+	}
+
+	return pq[i].distance < pq[j].distance
+}
+
+func (pq *PriorityQueue) RemoveAtIndex(index int) Item {
+	old := *pq
+	item := old[index]
+	*pq = append(old[0:index], old[index+1:]...)
+	heap.Init(pq) // Reinitialize the heap after removing an element
+	return item
+}
+
+func (pq *PriorityQueue) ChangeElement(index int, new_distance int) {
+	old_item := pq.RemoveAtIndex(index)
+	old_item.distance = new_distance
+	pq.AddElement(old_item)
+}
+
+func (pq PriorityQueue) GetIndexOfElementByKnot(knot *Knot) int {
+	for i := 0; i < len(pq); i++ {
+		if pq[i].cKnot == knot {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func (pq PriorityQueue) Print() {
+	for i := 0; i < len(pq); i++ {
+		if pq[i].previous_knot == nil {
+			fmt.Println(pq[i].cKnot.inhalt, pq[i].distance, "Keiner", pq[i].visited)
+		} else {
+			fmt.Println(pq[i].cKnot.inhalt, pq[i].distance, pq[i].previous_knot.inhalt, pq[i].visited)
+		}
+	}
+}
+
+func (pq PriorityQueue) GetIndexOfNearestNonVisitedItem() int {
+	for i := 0; i < len(pq); i++ {
+		if !pq[i].visited {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func (pq *PriorityQueue) AddElement(item Item) {
+	heap.Push(pq, item)
+}
+
+//End of Priority Queue Implementation
 
 func New(name string, allow_identical_names bool) *data {
 	var n *data = new(data)
@@ -67,7 +158,7 @@ func (n *data) String() string {
 		erg = erg + fmt.Sprint(n.knots[i])
 	}
 	erg = erg + "current_knot:" + fmt.Sprintln(n.current_knot)
-	erg = erg + fmt.Sprintln("Anzahl der Knot:", len(n.knots))
+	erg = erg + fmt.Sprintln("Anzahl der Knoten:", len(n.knots))
 	return erg
 }
 
@@ -254,4 +345,44 @@ func (knot *Knot) DeleteConnectionByDestination(delition_destination *Knot) {
 		knot.Connectionn[len(knot.Connectionn)-1] = nil
 		knot.Connectionn = knot.Connectionn[:len(knot.Connectionn)-1]
 	}
+}
+
+func (n *data) Dijkstras(startknot *Knot) PriorityQueue {
+	n.SetCurrentKnot(startknot)
+
+	table := make(PriorityQueue, 0)
+
+	for i := 0; i < len(n.knots); i++ {
+		if n.knots[i] == startknot {
+			table.AddElement(Item{cKnot: startknot, distance: 0, previous_knot: nil, visited: true})
+		} else {
+			table.AddElement(Item{cKnot: n.knots[i], distance: -3, previous_knot: nil, visited: false})
+		}
+	}
+
+	for {
+		connections := n.current_knot.Connectionn
+		for i := 0; i < len(connections); i++ {
+			//überprüfen ob kanten gewicht + gewicht von wo wir sind kleiner als das was schon in der tabelle steht
+
+			current_distant_to_knot := table[table.GetIndexOfElementByKnot(n.GiveCurrentKnot())].distance + connections[i].gewicht
+
+			if current_distant_to_knot < table[table.GetIndexOfElementByKnot(connections[i].ziel)].distance || table[table.GetIndexOfElementByKnot(connections[i].ziel)].distance == -3 {
+				table.ChangeElement(table.GetIndexOfElementByKnot(connections[i].ziel), current_distant_to_knot)
+				table[table.GetIndexOfElementByKnot(connections[i].ziel)].previous_knot = n.GiveCurrentKnot()
+			}
+		}
+
+		index_of_nearest_item := table.GetIndexOfNearestNonVisitedItem()
+
+		if index_of_nearest_item == -1 {
+			break
+		}
+
+		table[index_of_nearest_item].visited = true
+		//table[index_of_nearest_item].previous_knot = n.GiveCurrentKnot()
+		n.SetCurrentKnot(table[index_of_nearest_item].cKnot)
+	}
+
+	return table
 }
