@@ -4,7 +4,7 @@ import (
 	"container/heap"
 	"fmt"
 
-	"../color"
+	"color"
 )
 
 type data struct {
