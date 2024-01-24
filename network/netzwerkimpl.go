@@ -3,8 +3,7 @@ package network
 import (
 	"container/heap"
 	"fmt"
-
-	"../color"
+	"github.com/fatih/color"
 )
 
 type data struct {
