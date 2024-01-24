@@ -1,4 +1,4 @@
-module github.com/wertzuz/Network
+module github.com/ImVulkrum/Network
 
 go 1.21.5
 
