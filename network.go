@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ImVulcrum/Network/network"
+	"github.com/ImVulkrum/Network/network"
 )
 
 func main() {
